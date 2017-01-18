@@ -59,6 +59,11 @@ class DockerInstanceController(SingleInstanceController):
         Thread(target=super(DockerInstanceController, self).rem_instance,
                kwargs={'farm_id': farm_id, 'instance_id': instance_id}).start()
 
+    def extract_args(self, args):
+        if 'docker_service' in args:
+            args['members'] = {'url': '{{' + str(args.pop('docker_service')) + '}}'}
+        return args
+
     def _remove_instance(self, farm_id):
         instance_id = super(DockerInstanceController, self)._remove_instance(farm_id=farm_id)
         if isinstance(instance_id, list):
@@ -68,6 +73,7 @@ class DockerInstanceController(SingleInstanceController):
     def _create_instance(self, farm_id):
         if self.mialb_url is None:
             self.mialb_url = _guess_MiaLB_url()
+        self.client.services.create()
         service_id = self.client.services.create(image='nginx_for_mia:latest',
                                                  env=['FARMID={}'.format(str(farm_id)),
                                                       'MIALBURI={}'.format(str(self.mialb_url))],
